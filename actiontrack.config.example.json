@@ -1,0 +1,17 @@
+{
+  "people": {
+    "Priya Nair": { "email": "priya.nair@example.com" },
+    "Karan Joshi": { "email": "karan.joshi@example.com" }
+  },
+  "followup": {
+    "sink": "file",
+    "draftsDir": ".actiontrack/drafts",
+    "signoff": "Thanks,",
+    "mcp": {
+      "command": "node",
+      "args": ["path/to/your-gmail-mcp-server.js"],
+      "tool": "create_draft",
+      "timeoutMs": 20000
+    }
+  }
+}

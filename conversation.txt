@@ -1,0 +1,1823 @@
+
+> <browser_instruction># Claude in Chrome browser automation
+
+  You have access to browser automation tools (mcp__claude-in-chrome__*) for
+  interacting with web pages in Chrome. Follow these guidelines for effective
+  browser automation.
+
+  ## Loading deferred tools
+
+  If the mcp__claude-in-chrome__* tools are deferred (must be loaded via
+  ToolSearch before use), load every tool you expect to need in ONE ToolSearch
+  call — the select query accepts a comma-separated list — never one call per
+  tool. Start with the core set:
+
+  ToolSearch with query
+  "select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__naviga
+  te,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__read_page,mcp__clau
+  de-in-chrome__tabs_create_mcp,mcp__claude-in-chrome__tabs_close_mcp"
+
+  Add task-specific tools to the same call when the task obviously needs them:
+  read_console_messages / read_network_requests for debugging, form_input for
+  forms, gif_creator for recordings, javascript_tool for page scripting.
+
+  ## GIF recording
+
+  When performing multi-step browser interactions that the user may want to
+  review or share, use mcp__claude-in-chrome__gif_creator to record them.
+
+  You must ALWAYS:
+  * Capture extra frames before and after taking actions to ensure smooth
+  playback
+  * Name the file meaningfully to help the user identify it later (e.g.,
+  "login_process.gif")
+
+  ## Console log debugging
+
+  You can use mcp__claude-in-chrome__read_console_messages to read console
+  output. Console output may be verbose. If you are looking for specific log
+  entries, use the 'pattern' parameter with a regex-compatible pattern. This
+  filters results efficiently and avoids overwhelming output. For example, use
+  pattern: "[MyApp]" to filter for application-specific logs rather than
+  reading all console output.
+
+  ## Alerts and dialogs
+
+  IMPORTANT: Do not trigger JavaScript alerts, confirms, prompts, or browser
+  modal dialogs through your actions. These browser dialogs block all further
+  browser events and will prevent the extension from receiving any subsequent
+  commands. Instead, when possible, use console.log for debugging and then use
+  the mcp__claude-in-chrome__read_console_messages tool to read those log
+  messages. If a page has dialog-triggering elements:
+  1. Avoid clicking buttons or links that may trigger alerts (e.g., "Delete"
+  buttons with confirmation dialogs)
+  2. If you must interact with such elements, warn the user first that this may
+  interrupt the session
+  3. Use mcp__claude-in-chrome__javascript_tool to check for and dismiss any
+  existing dialogs before proceeding
+
+  If you accidentally trigger a dialog and lose responsiveness, inform the user
+  they need to manually dismiss it in the browser.
+
+  ## Avoid rabbit holes and loops
+
+  When using browser automation tools, stay focused on the specific task. If
+  you encounter any of the following, stop and ask the user for guidance:
+  - Unexpected complexity or tangential browser exploration
+  - Browser tool calls failing or returning errors after 2-3 attempts
+  - No response from the browser extension
+  - Page elements not responding to clicks or input
+  - Pages not loading or timing out
+  - Unable to complete the browser task despite multiple approaches
+
+  Explain what you attempted, what went wrong, and ask how the user would like
+  to proceed. Do not keep retrying the same failing browser action or explore
+  unrelated pages without checking in first.
+
+  ## Tab context and session startup
+
+  IMPORTANT: At the start of each browser automation session, call
+  mcp__claude-in-chrome__tabs_context_mcp first to get information about the
+  user's current browser tabs. Use this context to understand what the user
+  might want to work with before creating new tabs.
+
+  Never reuse tab IDs from a previous/other session. Follow these guidelines:
+  1. Only reuse an existing tab if the user explicitly asks to work with it
+  2. Otherwise, create a new tab with mcp__claude-in-chrome__tabs_create_mcp
+  3. If a tool returns an error indicating the tab doesn't exist or is invalid,
+  call tabs_context_mcp to get fresh tab IDs
+  4. When a tab is closed by the user or a navigation error occurs, call
+  tabs_context_mcp to see what tabs are available</browser_instruction>
+
+> Scenario
+
+  Your team's meeting notes pile up as markdown files. Action items get lost,
+  and follow-up emails are written late or not at all. You will build a small
+  CLI tool, actiontrack, that reads meeting notes, tracks the action items, and
+  drafts follow-up emails for review.
+
+  What you build
+
+  A CLI with four commands:
+
+  1. actiontrack ingest <folder> parses every .md meeting note in the folder.
+  Each note has
+     a date, attendees and free- appear as lines like - [ ]Priya to send the
+  revised quote by Friday. The tool stores them with owner, task, due
+     date (resolved to a real daurce file and status.
+  2. actiontrack list shows items. Filters: --owner, --status
+  open|done|overdue,
+     --due-before <date>. Overdu
+  3. actiontrack done <id> marks an item as done.
+  4. actiontrack followup <ownerper owner covering their openand overdue items,
+  and creates a Gmail draft through the Gmail MCP connector. It never sends.
+
+  Edge cases the tool must handl
+  Duplicate items repeated across several meetings.
+  Items with no owner or no da
+  Two people with the same first name.
+  Malformed notes (skip them and report, don't crash).
+  A sample notes/ folder with 30+ files is provided. Several are long and
+  messy, and a few are deliberately malformed.
+  Build actiontrack using SDD (Spec-Driven Development). First analyze the
+  requirements and notes provided, then create specs, implementation plan and
+  task breakdown before coding. Create claude.md and skills.md, testing and do
+  edge-case handling. Implement all 4 CLI commands (ingest, list, done,
+  followup), handle all edge cases, use a clean industry-standard structure,
+  proper database storage and tests. Use Gmail MCP to create follow-up drafts
+  only, never send emails. Follow the SDD process step by step. Don't jump
+  straight into implementation.
+
+● I'll start by checking what's in the working directory, since the notes were
+  attached inline and may or may not exist on disk.
+  Ran 1 shell command (ctrl+o to expand)
+
+● The directory is empty and Python is missing, but Node 24 is available with
+  node:sqlite and node:test, so I'll build without npm dependencies. I'm writing
+  the inline notes to notes/ first and checking the Gmail connector before
+  drafting the spec. · summary
+
+  Ran 3 shell commands · 3 failed (ctrl+o to expand)
+
+● Bash heredocs are choking on something in the content. I'll sidestep that by
+  writing all the notes into one bundle file with the Write tool and splitting
+  it with a small Node script.
+
+  Made 2 scratchpad edits +464 (ctrl+o to expand)
+
+● The Gmail connector is live. It exposes create_draft with to[], subject and
+  body, and I don't see a send tool in its list. Next I'll materialize the
+  notes.
+
+  Ran 1 shell command · 1 failed (ctrl+o to expand)
+
+● 35 files are on disk, 34 of them .md. Before I write the analysis document,
+  I'll measure the corpus so its numbers are facts and not guesses.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The corpus check confirmed 118 raw checkbox lines across the markdown files
+  (13 checked), all three bullet markers in use, nine distinct people with two
+  shared first names, and a binary scratch.md; node:sqlite also works without
+  warning. I'm writing the Phase 1 analysis as a document first so the decisions
+  are traceable before any spec or code. · summary
+
+● Write(specs\001-actiontrack\analysis.md)
+  ⎿  Wrote 137 lines to specs\001-actiontrack\analysis.md
+       1 # Phase 1 — Requirements & corpus analysis
+       2
+       3 > SDD step 1 of 4: **analysis → spec → plan → tasks**. Nothing i
+         n `src/` exists until steps 2–4 are written.
+       4 > This document records what was read, what is ambiguous, and wh
+         ich decisions were made (and why). The
+       5 > specification (`spec.md`) turns these decisions into testable
+         requirements.
+       6
+       7 ## 1. What was asked
+     … +130 lines (ctrl+o to expand)
+
+● Phase 2 (specification). This turns the decisions into numbered, testable
+  requirements.
+
+● Write(specs\001-actiontrack\spec.md)
+  ⎿  Wrote 172 lines to specs\001-actiontrack\spec.md
+      1 # Phase 2 — Specification: `actiontrack`
+      2
+      3 Status: **approved for planning** · Inputs: `analysis.md` (decisi
+        ons **D1–D12**, gaps **G1–G7**)
+      4 Keywords MUST / SHOULD / MAY are used in the RFC 2119 sense. Ever
+        y `FR-*` has at least one test (traceability
+      5 table in `plan.md` §9).
+      6
+      7 ## 1. Purpose
+      8 Turn a folder of markdown meeting notes into a tracked, de-duplic
+     … +165 lines (~13 KB) (ctrl+o to expand)
+
+● Phase 3 (implementation plan). This covers architecture, DDL, algorithms and
+  test strategy.
+
+● Write(specs\001-actiontrack\plan.md)
+  ⎿  Wrote 248 lines to specs\001-actiontrack\plan.md
+       1 # Phase 3 — Implementation plan
+       2
+       3 Inputs: `spec.md` (FR-*/NFR-*), `analysis.md` (D1–D12). Output f
+         eeds `tasks.md`.
+       4
+       5 ## 1. Technology (D1)
+       6
+       7 | Concern | Choice | Why |
+       8 |---|---|---|
+       9 | Language | JavaScript (ESM) + JSDoc types, `// @ts-check`-frie
+     … +240 lines (~16 KB) (ctrl+o to expand)
+
+● Phase 4 (task breakdown). Tasks are ordered by dependency, and each is paired
+  with its test.
+
+● Write(specs\001-actiontrack\tasks.md)
+  ⎿  Wrote 47 lines to specs\001-actiontrack\tasks.md
+       1 # Phase 4 — Task breakdown
+       2
+       3 Rule: each task lists its **requirements**, **deliverable**, and
+          **done-when**. Tests are written with (or before) the code they
+          cover.
+       4 `[P]` = can be done in parallel with its siblings. Check a box o
+         nly when its done-when is true and `npm test` is green.
+       5
+       6 ## M0 — Foundations
+       7 - [ ] **T00** Scaffold: `package.json` (bin, scripts, engines, n
+     … +41 lines (~5 KB) (ctrl+o to expand)
+
+● Write(CLAUDE.md)
+  ⎿  Wrote 60 lines to CLAUDE.md
+       1 # CLAUDE.md — actiontrack
+       2
+       3 Guidance for Claude Code (and humans) working in this repository
+         .
+       4
+       5 ## What this is
+       6 `actiontrack` — a zero-dependency Node CLI that ingests markdown
+          meeting notes into SQLite, tracks action items,
+       7 and drafts (never sends) per-owner follow-up emails. Built with
+         **Spec-Driven Development**.
+     … +53 lines (ctrl+o to expand)
+
+● The spec set and CLAUDE.md are finished, and I'll write skills.md only after
+  the CLI's behavior exists. I'm starting implementation now with the scaffold
+  and the pure domain, beginning with the date engine. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(src\domain\dates.js)
+  ⎿  Wrote 233 lines to src\domain\dates.js
+       1 // Pure date engine. A "day" is an ISO string `YYYY-MM-DD`; all
+         arithmetic is UTC calendar-day arithmetic,
+       2 // so there is no local-timezone or DST drift. Nothing here read
+         s the clock (NFR-3).
+       3
+       4 const MONTH_NUMBERS = {
+       5   jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr
+         : 4, april: 4, may: 5,
+       6   jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8, sep: 9, s
+         ept: 9, september: 9,
+     … +227 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(tests\unit\dates.test.js)
+  ⎿  Wrote 172 lines to tests\unit\dates.test.js
+       1 import { test, describe } from 'node:test';
+       2 import assert from 'node:assert/strict';
+       3 import {
+       4   addDays, daysBetween, endOfMonth, extractDue, isValidIso, make
+         Iso, parseAbsoluteDate, weekday,
+       5 } from '../../src/domain/dates.js';
+       6
+       7 describe('day arithmetic', () => {
+       8   test('makeIso / isValidIso reject impossible dates', () => {
+       9     assert.equal(makeIso(2028, 2, 29), '2028-02-29');
+     … +163 lines (ctrl+o to expand)
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(src\domain\dates.js)
+  ⎿  Added 1 line, removed 1 line
+      228      .replace(/\s+/g, ' ')
+      229      .replace(/\s+([,;.])/g, '$1')
+      230      .replace(/(?:[,;:—–-]\s*)?(?:results\s+)?\b(?:due|by|befor
+           e|until|till|on|for|from)\s*$/i, '')
+      231 -    .replace(/[\s,;:—–-]+$/, '')                              
+      231 +    .replace(/[\s,;:.—–-]+$/, '')                             
+      232      .trim();
+      233  }
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● One real defect: removing due 15 October leaves a dangling "results". I'll
+  handle that case when the preposition was due.
+
+● Update(src\domain\dates.js)
+  ⎿  Added 4 lines, removed 1 line
+      218    if (!best) return { task: tidy(text), due: null, phrase: nul
+           l, invalid: false };
+      219 
+      220    const { iso, invalid } = resolve(best.form.kind, best.groups
+           , refIso);
+      221 -  const removed = text.slice(0, best.start) + text.slice(best.
+          -end);                                                         
+      221 +  let before = text.slice(0, best.start);                     
+      222 +  // "…survey, results due 15 October": drop the noun that onl
+          +y made sense with "due".                                      
+      223 +  if (/^due\b/i.test(best.groups.prep || '')) before = before.
+          +replace(/(?:[,;:—–-]\s*)?\b(?:results|proposal|report)\s*$/i, 
+          +'');                                                          
+      224 +  const removed = before + text.slice(best.end);              
+      225    return { task: tidy(removed), due: iso, phrase: best.text.tr
+           im(), invalid: Boolean(invalid) };
+      226  }
+      227 
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Dates pass: 55/55. Next come the front-matter parser, the markdown masking
+  pass and the action-line extractor, each with tests.
+
+● Write(src\domain\frontmatter.js)  ⎿  Wrote 49 lines to src\domain\frontmatter.js
+       1 // Minimal front-matter reader (just enough YAML for `title`, `d
+         ate`, `attendees`). Pure; no dependencies.
+       2
+       3 /**
+       4  * @param {string[]} lines whole file split on "\n"
+       5  * @returns {{data: Record<string, string|string[]>, endLine: nu
+         mber} | null}
+       6  *   `endLine` is the 1-based line number of the closing `---`.
+         Null when the file has no front matter.
+       7  */
+     … +42 lines (ctrl+o to expand)
+
+● Write(src\domain\markdown-scan.js)
+  ⎿  Wrote 71 lines to src\domain\markdown-scan.js
+       1 // One pass over the lines of a note that marks which lines must
+          never be mined for action items:
+       2 // fenced code blocks, HTML comments (single- or multi-line) and
+          blockquotes (FR-I7). Pure.
+       3
+       4 /**
+       5  * @typedef {{no: number, text: string, skipped: false} | {no: n
+         umber, text: string, skipped: true, reason: 'fence'|'comment'|'q
+         uote'}} ScannedLine
+       6  */
+     … +65 lines (ctrl+o to expand)
+
+● Write(src\domain\action-lines.js)
+  ⎿  Wrote 82 lines to src\domain\action-lines.js
+       1 // Recognises action-item lines in the non-skipped lines of a no
+         te (FR-I6, FR-I8). Pure.
+       2 //
+       3 // Three notations are supported:
+       4 //   1. checkbox bullets   `- [ ] …`, `* [x] …`, `+ [X] …` at an
+         y indent
+       5 //   2. `ACTION: …` lines
+       6 //   3. table rows under a header naming Owner and Action (optio
+         nally Due)
+       7
+     … +75 lines (ctrl+o to expand)
+
+● Write(tests\unit\markdown-parsing.test.js)
+  ⎿  Wrote 100 lines to tests\unit\markdown-parsing.test.js
+       1 import { test, describe } from 'node:test';
+       2 import assert from 'node:assert/strict';
+       3 import { parseFrontMatter } from '../../src/domain/frontmatter.j
+         s';
+       4 import { scanLines } from '../../src/domain/markdown-scan.js';
+       5 import { extractActionLines } from '../../src/domain/action-line
+         s.js';
+       6
+       7 const lines = (s) => s.split('\n');
+       8 const items = (s) => extractActionLines(scanLines(lines(s)));
+     … +92 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Now owner parsing and resolution, which is the same-first-name logic, plus
+  normalisation and status.
+
+● Write(src\domain\roster.js)
+  ⎿  Wrote 91 lines to src\domain\roster.js
+       1 // People and name matching. Pure.
+       2
+       3 /**
+       4  * @typedef {{fullName: string, firstName: string, lastName: str
+         ing}} PersonName
+       5  */
+       6
+       7 /** Lower-case, strip accents and apostrophes so "Zoë" == "zoe"
+         and "O'Neil" == "oneil". */
+       8 export function fold(s) {
+     … +83 lines (ctrl+o to expand)
+
+● Write(src\domain\owner.js)
+  ⎿  Wrote 102 lines to src\domain\owner.js
+       1 // Owner clause parsing ("Priya N. to send …") and resolution ag
+         ainst attendees / roster (FR-I10–I14, D4). Pure.
+       2 import { candidatesFor, fold } from './roster.js';
+       3
+       4 /** @typedef {import('./roster.js').PersonName} PersonName */
+       5 /** @typedef {import('./roster.js').Qualifier} Qualifier */
+       6
+       7 export const GROUP_WORDS = new Set(['everyone', 'everybody', 'al
+         l', 'team', 'we']);
+       8 export const PLACEHOLDER_WORDS = new Set(['tbd', 'tba', 'someone
+     … +95 lines (~4 KB) (ctrl+o to expand)
+
+● Write(src\domain\normalize.js)
+  ⎿  Wrote 28 lines to src\domain\normalize.js
+       1 // Task normalisation and identity (D6, FR-I20). Pure.
+       2 // Deliberately NOT fuzzy: two tasks are the same commitment onl
+         y if they are equal after this normalisation.
+       3
+       4 const ARTICLES = new Set(['the', 'a', 'an']);
+       5
+       6 /** @param {string} task */
+       7 export function normalizeTask(task) {
+       8   return String(task)
+       9     .normalize('NFKD')
+     … +19 lines (ctrl+o to expand)
+
+● Write(src\domain\status.js)
+  ⎿  Wrote 15 lines to src\domain\status.js
+       1 // Derived status (D7, FR-L2). Stored status is only open|done;
+         overdue is computed against "today". Pure.
+       2
+       3 /** @typedef {'open'|'done'|'overdue'} DerivedStatus */
+       4 export const STATUSES = ['open', 'done', 'overdue'];
+       5
+       6 /**
+       7  * @param {{status: string, dueDate: string|null}} item
+       8  * @param {string} today YYYY-MM-DD
+       9  * @returns {DerivedStatus}
+     … +6 lines (ctrl+o to expand)
+
+● I'm dropping Chase and File from the verb stoplist, since they could be real
+  first names, and I'll only treat a colon as a delimiter when the name after it
+  actually resolves. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(tests\unit\owner-normalize.test.js)
+  ⎿  Wrote 167 lines to tests\unit\owner-normalize.test.js
+       1 import { test, describe } from 'node:test';
+       2 import assert from 'node:assert/strict';
+       3 import { parseOwnerClause, resolveOwner, ownerKey } from '../../
+         src/domain/owner.js';
+       4 import { buildRoster, matchPeople, makePerson, fold } from '../.
+         ./src/domain/roster.js';
+       5 import { normalizeTask, dedupeKey, sentenceCase } from '../../sr
+         c/domain/normalize.js';
+       6 import { deriveStatus } from '../../src/domain/status.js';
+       7
+     … +160 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The patch script reported that the delim group replacement didn't apply, which
+  explains the failures. I'll look at the actual source and fix it properly.
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● Update(src\domain\owner.js)
+  ⎿  Added 1 line, removed 1 line
+      19  const CLAUSE = new RegExp(
+      20    String.raw`^(?<owners>${NAMEQ}(?:\s*(?:&|,|\band\b)\s*${NAMEQ
+          })*)` +
+      21    String.raw`(?:\s*\((?:with|and|cc)\s+(?<helpers>[^)]+)\))?` +
+      22 -  String.raw`(?:\s*:\s*|\s+(?:[Tt]o|will|should)\s+)(?<task>.+)
+         -$`,                                                            
+      22 +  String.raw`(?<delim>\s*:\s*|\s+(?:[Tt]o|will|should)\s+)(?<ta
+         +sk>.+)$`,                                                      
+      23  );
+      24 
+      25  /**
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● In this Node version --test takes globs, not directories. I'll fix the npm
+  scripts too.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 110 tests pass. Next is the note parser, which composes all of these pieces.
+  It's pure and returns values, never exceptions.
+
+● Write(src\domain\note-parser.js)
+  ⎿  Wrote 139 lines to src\domain\note-parser.js
+       1 // Parse one meeting note into a header + unresolved occurrences
+          (FR-I1–I9, I15–I19). Pure: no I/O, no clock.
+       2 // Owner *resolution* needs the roster built from all notes, so
+         it happens later in the ingest service (FR-I14).
+       3 import { parseFrontMatter, splitList } from './frontmatter.js';
+       4 import { scanLines } from './markdown-scan.js';
+       5 import { extractActionLines } from './action-lines.js';
+       6 import { parseOwnerClause } from './owner.js';
+       7 import { extractDue, isValidIso, parseAbsoluteDate, weekday } fr
+         om './dates.js';
+     … +132 lines (ctrl+o to expand)
+
+● Write(tests\unit\note-parser.test.js)
+  ⎿  Wrote 168 lines to tests\unit\note-parser.test.js
+       1 import { test, describe } from 'node:test';
+       2 import assert from 'node:assert/strict';
+       3 import fs from 'node:fs';
+       4 import path from 'node:path';
+       5 import { fileURLToPath } from 'node:url';
+       6 import { parseNote } from '../../src/domain/note-parser.js';
+       7
+       8 const NOTES = path.join(path.dirname(fileURLToPath(import.meta.u
+         rl)), '..', '..', 'notes');
+       9 const corpus = (name) => fs.readFileSync(path.join(NOTES, name))
+     … +160 lines (~8 KB) (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● My test expectation was wrong, not the parser. The offsite has 7 checkboxes
+  plus 1 table row and 1 ACTION: line, which makes 9. I'll fix the test and
+  confirm.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Parser tests pass at 29/29; next I'm building the storage milestone (errors,
+  migrations, DB open, repository), with all SQL kept in the repository.
+  · summary
+
+● Write(src\errors.js)
+  ⎿  Wrote 24 lines to src\errors.js
+       1 // Typed errors. `cli.js` is the only place that turns these int
+         o exit codes and messages (plan §6).
+       2
+       3 export class ActionTrackError extends Error {
+       4   /** @param {string} message @param {number} exitCode */
+       5   constructor(message, exitCode = 1) {
+       6     super(message);
+       7     this.name = new.target.name;
+       8     this.exitCode = exitCode;
+       9   }
+     … +15 lines (ctrl+o to expand)
+● Write(src\db\migrations.js)
+  ⎿  Wrote 99 lines to src\db\migrations.js
+       1 // Ordered, forward-only schema migrations. The applied version
+         is stored in `PRAGMA user_version` (FR-G4).
+       2 import { StorageError } from '../errors.js';
+       3
+       4 /** @type {{version: number, sql: string}[]} */
+       5 export const MIGRATIONS = [
+       6   {
+       7     version: 1,
+       8     sql: `
+       9       CREATE TABLE meetings (
+     … +90 lines (ctrl+o to expand)
+
+● Write(src\db\open.js)
+  ⎿  Wrote 25 lines to src\db\open.js
+       1 // Opens (and creates) the SQLite database. The only module that
+          imports `node:sqlite`.
+       2 import fs from 'node:fs';
+       3 import path from 'node:path';
+       4 import { DatabaseSync } from 'node:sqlite';
+       5 import { StorageError } from '../errors.js';
+       6 import { migrate } from './migrations.js';
+       7 import { Repository } from './repo.js';
+       8
+       9 /**
+     … +16 lines (ctrl+o to expand)
+
+● Now the repository itself.
+
+● Write(src\db\repo.js)
+  ⎿  Wrote 319 lines to src\db\repo.js
+       1 // The only module that contains SQL. Services and commands rece
+         ive a Repository by injection.
+       2 import { makePerson } from '../domain/roster.js';
+       3 import { StorageError } from '../errors.js';
+       4
+       5 /**
+       6  * @typedef {{id: number, fullName: string, firstName: string, l
+         astName: string, email: string|null}} Person
+       7  * @typedef {{
+       8  *   id: number, dedupeKey: string, ownerKind: 'person'|'ambiguo
+     … +312 lines (~14 KB) (ctrl+o to expand)
+
+● I left a pointless ternary in transaction(), so I'll clean it up. Then I'll
+  write the repository tests, which cover the recompute rules from the spec.
+
+● Update(src\db\repo.js)
+  ⎿  Added 1 line, removed 1 line
+      71        return result;
+      72      } catch (err) {
+      73        this.db.exec('ROLLBACK');
+      74 -      throw err instanceof StorageError ? err : err;           
+      74 +      throw err;                                               
+      75      } finally {
+      76        this.depth -= 1;
+      77      }
+
+● Update(src\db\repo.js)
+  ⎿  Removed 1 line
+      1  // The only module that contains SQL. Services and commands rece
+         ive a Repository by injection.
+      2  import { makePerson } from '../domain/roster.js';
+      3 -import { StorageError } from '../errors.js';                    
+      3 
+      4  /**
+      5   * @typedef {{id: number, fullName: string, firstName: string, l
+         astName: string, email: string|null}} Person
+
+● Write(tests\helpers.js)
+  ⎿  Wrote 34 lines to tests\helpers.js
+       1 // Shared test helpers. Tests never touch a real DB path, the re
+         al clock, or Gmail.
+       2 import fs from 'node:fs';
+       3 import os from 'node:os';
+       4 import path from 'node:path';
+       5 import { fileURLToPath } from 'node:url';
+       6 import { openRepository } from '../src/db/open.js';
+       7
+       8 export const ROOT = path.join(path.dirname(fileURLToPath(import.
+         meta.url)), '..');
+     … +26 lines (ctrl+o to expand)
+
+● Write(tests\unit\repo.test.js)
+  ⎿  Wrote 298 lines to tests\unit\repo.test.js
+       1 import { test, describe } from 'node:test';
+       2 import assert from 'node:assert/strict';
+       3 import { memoryRepo } from '../helpers.js';
+       4 import { migrate, LATEST_VERSION } from '../../src/db/migrations
+         .js';
+       5 import { DatabaseSync } from 'node:sqlite';
+       6 import { StorageError } from '../../src/errors.js';
+       7
+       8 const NOW = '2026-10-15T00:00:00.000Z';
+       9
+     … +289 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All 29 repository tests pass. Before the ingest service I'm making each run
+  reprocess every valid note, because a hash-based skip would make owner
+  resolution depend on batching; the hash will only report new, changed and
+  unchanged files, and I'm updating FR-I25 to say so. · summary
+
+● Write(src\clock.js)
+  ⎿  Wrote 26 lines to src\clock.js
+       1 // The only source of "now" (FR-G3). `--today` / ACTIONTRACK_TOD
+         AY pin it for reproducible output and tests.
+       2 import { isValidIso } from './domain/dates.js';
+       3 import { UsageError } from './errors.js';
+       4
+       5 /**
+       6  * @param {{today?: string, env?: Record<string, string|undefine
+         d>}} [opts]
+       7  * @returns {{today: () => string, now: () => string}}
+       8  */
+     … +18 lines (ctrl+o to expand)
+
+● Write(src\config.js)
+  ⎿  Wrote 82 lines to src\config.js
+       1 // Optional JSON config: owner emails and follow-up sink setting
+         s (plan §5). Validated on load.
+       2 import fs from 'node:fs';
+       3 import path from 'node:path';
+       4 import { UsageError } from './errors.js';
+       5
+       6 export const DEFAULT_CONFIG_NAME = 'actiontrack.config.json';
+       7 export const SINKS = ['file', 'stdout', 'mcp'];
+       8
+       9 /**
+     … +73 lines (ctrl+o to expand)
+
+● Now the ingest service, the largest single piece of orchestration.
+
+● Write(src\services\ingest-service.js)
+  ⎿  Wrote 205 lines to src\services\ingest-service.js
+       1 // Folder → parsed notes → resolved owners → de-duplicated items
+          in the database (FR-I1–I27).
+       2 import crypto from 'node:crypto';
+       3 import fs from 'node:fs';
+       4 import path from 'node:path';
+       5 import { parseNote } from '../domain/note-parser.js';
+       6 import { extractDue } from '../domain/dates.js';
+       7 import { resolveOwner, ownerKey } from '../domain/owner.js';
+       8 import { buildRoster, makePerson } from '../domain/roster.js';
+       9 import { dedupeKey } from '../domain/normalize.js';
+     … +196 lines (ctrl+o to expand)
+
+● Before building the commands, a smoke test of the ingest service against the
+  real corpus will show whether the numbers match what I derived by hand: 31
+  ingested, 3 skipped, and 115 action lines.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The corpus checks out against the hand analysis: 31 ingested, 3 skipped for
+  the right reasons, 115 lines, 93 items, and a clean idempotent rerun. I'm
+  building the CLI layer next. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(src\format\table.js)
+  ⎿  Wrote 28 lines to src\format\table.js
+       1 // Plain-text table and colour helpers. No ANSI unless explicitl
+         y enabled (FR-G5).
+       2
+       3 const CODES = { red: 31, green: 32, yellow: 33, dim: 2, bold: 1
+         };
+       4
+       5 /** @param {keyof typeof CODES} color @param {string} text @para
+         m {boolean} enabled */
+       6 export function paint(color, text, enabled) {
+       7   return enabled ? `\u001b[${CODES[color]}m${text}\u001b[0m` : t
+     … +22 lines (ctrl+o to expand)
+
+● Write(src\format\report.js)
+  ⎿  Wrote 47 lines to src\format\report.js
+       1 // Human-readable ingest report (FR-I27).
+       2 import { paint } from './table.js';
+       3
+       4 const ATTENTION = [
+       5   ['ambiguous-owner', 'Ambiguous owner — same first name, not gu
+         essed'],
+       6   ['no-owner', 'No individual owner'],
+       7   ['unknown-owner', 'Owner not a known person'],
+       8 ];
+       9
+     … +38 lines (ctrl+o to expand)
+
+● Write(src\services\people-lookup.js)
+  ⎿  Wrote 29 lines to src\services\people-lookup.js
+       1 // Resolve a user-typed owner name to exactly one person — or fa
+         il loudly. Never picks between same-name people (FR-L4, FR-F1).
+       2 import { matchPeople } from '../domain/roster.js';
+       3 import { NotFoundError, UsageError } from '../errors.js';
+       4
+       5 /**
+       6  * @param {import('../db/repo.js').Repository} repo
+       7  * @param {string} query
+       8  * @param {{missing: 'null'|'throw'}} [opts] what to do when nob
+         ody matches
+     … +21 lines (ctrl+o to expand)
+
+● Write(src\commands\ingest.js)
+  ⎿  Wrote 18 lines to src\commands\ingest.js
+       1 // `actiontrack ingest <folder>` — thin wrapper; all rules live
+         in the service (FR-I*).
+       2 import { ingestFolder } from '../services/ingest-service.js';
+       3 import { formatIngestReport } from '../format/report.js';
+       4 import { UsageError } from '../errors.js';
+       5
+       6 export const ingestCommand = {
+       7   name: 'ingest',
+       8   summary: 'Parse every .md meeting note in <folder> and store i
+         ts action items',
+     … +10 lines (ctrl+o to expand)
+
+● Write(src\commands\list.js)
+  ⎿  Wrote 117 lines to src\commands\list.js
+       1 // `actiontrack list` — filters, derived status, table / JSON ou
+         tput (FR-L1–L7).
+       2 import { deriveStatus, STATUSES } from '../domain/status.js';
+       3 import { parseDueArg } from '../domain/dates.js';
+       4 import { findOwner, namesFor } from '../services/people-lookup.j
+         s';
+       5 import { paint, renderTable } from '../format/table.js';
+       6 import { UsageError } from '../errors.js';
+       7
+       8 /** How an item's owner reads in a table. */
+     … +109 lines (ctrl+o to expand)
+
+● Write(src\commands\done.js)  ⎿  Wrote 35 lines to src\commands\done.js
+       1 // `actiontrack done <id...>` — mark items done (FR-D1–D3).
+       2 import { UsageError } from '../errors.js';
+       3
+       4 export const doneCommand = {
+       5   name: 'done',
+       6   summary: 'Mark one or more items as done',
+       7   usage: 'done <id...>',
+       8   options: {},
+       9   run({ args, values, ctx }) {
+      10     if (args.length === 0) throw new UsageError('usage: actiontr
+     … +26 lines (ctrl+o to expand)
+
+● Now the follow-up side: composition (pure), the sinks, and the MCP client with
+  its never-send guard. Then the service and command.
+
+● Write(src\email\compose.js)
+  ⎿  Wrote 65 lines to src\email\compose.js
+      1 // Pure: items → a plain-text email payload (FR-F3, FR-F4). Gmail
+        's `body` is plain text, so no Markdown here.
+      2 import { daysBetween, WEEKDAY_NAMES, weekday } from '../domain/da
+        tes.js';
+      3 import { sentenceCase } from '../domain/normalize.js';
+      4
+      5 /**
+      6  * @typedef {import('../db/repo.js').Item} Item
+      7  * @typedef {{to: string[], subject: string, body: string}} Draft
+        Payload
+     … +58 lines (ctrl+o to expand)
+
+● Write(src\email\mcp-client.js)
+  ⎿  Wrote 128 lines to src\email\mcp-client.js
+       1 // Minimal MCP (Model Context Protocol) stdio client: newline-de
+         limited JSON-RPC 2.0.
+       2 // It can only do four things: initialize, list tools, call ONE
+         tool, close — and `callTool` refuses anything that looks
+       3 // like sending mail. This is the structural half of "actiontrac
+         k never sends" (FR-F5).
+       4 import { spawn } from 'node:child_process';
+       5 import { SinkError } from '../errors.js';
+       6
+       7 export const SEND_PATTERN = /send/i;
+     … +121 lines (ctrl+o to expand)
+
+● Write(src\email\sinks\index.js)
+  ⎿  Wrote 23 lines to src\email\sinks\index.js
+       1 // Draft sinks. The interface has exactly one capability — creat
+         ing a draft. There is no "send" anywhere (FR-F5).
+       2 //
+       3 // @typedef {{status: 'previewed'|'staged'|'drafted', id?: strin
+         g, location?: string}} SinkResult
+       4 // @typedef {{name: string, createDraft(payload: import('../comp
+         ose.js').DraftPayload, meta: {personName: string, slug: string})
+         : Promise<SinkResult>, close?(): Promise<void>}} DraftSink
+       5 import { UsageError } from '../../errors.js';
+       6 import { createStdoutSink } from './stdout.js';
+     … +17 lines (ctrl+o to expand)
+
+● Write(src\email\sinks\stdout.js)
+  ⎿  Wrote 19 lines to src\email\sinks\stdout.js
+       1 // Preview sink: prints the draft, saves nothing.
+       2
+       3 /** @param {{out: (s: string) => void}} io */
+       4 export function createStdoutSink(io) {
+       5   return {
+       6     name: 'stdout',
+       7     async createDraft(payload, meta) {
+       8       io.out([
+       9         `----- Draft for ${meta.personName} (preview only — noth
+         ing saved, nothing sent) -----`,
+     … +10 lines (ctrl+o to expand)
+
+● Write(src\email\sinks\file.js)
+  ⎿  Wrote 23 lines to src\email\sinks\file.js
+       1 // Staging sink (default): writes each draft as <dir>/<run>/<slu
+         g>.json (+ .txt preview).
+       2 // An agent or a human then relays the payloads to a mail client
+         's *draft* API (see skills.md).
+       3 import fs from 'node:fs';
+       4 import path from 'node:path';
+       5
+       6 /** @param {{dir: string, now: () => string}} opts */
+       7 export function createFileSink({ dir, now }) {
+       8   const run = now().replace(/[:.]/g, '-');
+     … +15 lines (ctrl+o to expand)
+
+● Write(src\email\sinks\mcp.js)
+  ⎿  Wrote 53 lines to src\email\sinks\mcp.js
+       1 // MCP sink: creates the draft through a configured MCP stdio se
+         rver (e.g. a Gmail MCP server).
+       2 // Guard order: refuse send-like tool names → verify the server
+         really offers the draft tool → single tools/call.
+       3 import { SinkError } from '../../errors.js';
+       4 import { McpClient, assertNotSend } from '../mcp-client.js';
+       5
+       6 /**
+       7  * @param {import('../../config.js').McpConfig|null} cfg
+       8  * @param {{clientFactory?: (c: any) => McpClient}} [deps] injec
+     … +46 lines (~2 KB) (ctrl+o to expand)
+
+● Update(src\email\mcp-client.js)
+  ⎿  Added 1 line
+      47          reject(new SinkError(`cannot start MCP server "${this.c
+          ommand}": ${err.message}`));
+      48        });
+      49        child.once('spawn', resolve);
+      50 +      child.stdin.on('error', () => { /* server went away; the 
+         +exit handler reports it */ });                                 
+      51        child.stdout.setEncoding('utf8');
+      52        child.stdout.on('data', (chunk) => this.onData(chunk));
+      53        child.stderr.setEncoding('utf8');
+
+● Write(src\services\followup-service.js)
+  ⎿  Wrote 100 lines to src\services\followup-service.js
+       1 // Select each owner's open/overdue items, compose a draft, hand
+          it to a sink — and never send (FR-F1–F8).
+       2 import crypto from 'node:crypto';
+       3 import { composeFollowup } from '../email/compose.js';
+       4 import { fold } from '../domain/roster.js';
+       5 import { findOwner } from './people-lookup.js';
+       6 import { SinkError } from '../errors.js';
+       7
+       8 /**
+       9  * @typedef {{
+     … +91 lines (ctrl+o to expand)
+
+● Write(src\commands\followup.js)
+  ⎿  Wrote 68 lines to src\commands\followup.js
+       1 // `actiontrack followup <owner> | --all` — drafts only, never s
+         ends (FR-F1–F8).
+       2 import { createSink, SINK_NAMES } from '../email/sinks/index.js'
+         ;
+       3 import { runFollowup } from '../services/followup-service.js';
+       4 import { ownerLabel } from './list.js';
+       5 import { paint } from '../format/table.js';
+       6 import { UsageError } from '../errors.js';
+       7
+       8 export const followupCommand = {
+     … +60 lines (ctrl+o to expand)
+
+● Write(src\cli.js)
+  ⎿  Wrote 108 lines to src\cli.js
+       1 // Argument parsing, command dispatch, and the ONLY place errors
+          become exit codes and messages (plan §6, FR-G1/G2).
+       2 import fs from 'node:fs';
+       3 import path from 'node:path';
+       4 import { fileURLToPath } from 'node:url';
+       5 import { parseArgs } from 'node:util';
+       6 import { ActionTrackError, UsageError } from './errors.js';
+       7 import { createClock } from './clock.js';
+       8 import { loadConfig } from './config.js';
+       9 import { openRepository } from './db/open.js';
+     … +99 lines (ctrl+o to expand)
+
+● Write(bin\actiontrack.js)
+  ⎿  Wrote 11 lines to bin\actiontrack.js
+       1 #!/usr/bin/env node
+       2 // Entry shim: silences node:sqlite's "experimental" notice (onl
+         y that one), then runs the CLI.
+       3 const emit = process.emitWarning;
+       4 process.emitWarning = function patched(warning, ...args) {
+       5   const type = typeof args[0] === 'string' ? args[0] : args[0]?.
+         type;
+       6   if (type === 'ExperimentalWarning' && /sqlite/i.test(String(wa
+         rning))) return undefined;
+       7   return emit.call(process, warning, ...args);
+     … +4 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The ingest works end to end, with no SQLite warning leaking out. Next I'll
+  exercise list, done and followup against the same database.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All four commands pass, including the exit codes (2 for the ambiguous owner
+  and bad flag, 1 for the missing id). Next I'm writing a fake MCP server
+  fixture that records calls, so the tests can confirm no send tool ever fires.
+  · summary
+
+● Write(tests\fixtures\fake-mcp-server.mjs)
+  ⎿  Wrote 35 lines to tests\fixtures\fake-mcp-server.mjs
+       1 // A tiny fake MCP stdio server for tests. Newline-delimited JSO
+         N-RPC 2.0.
+       2 //   FAKE_MCP_TOOLS  comma-separated tool names to advertise (de
+         fault "create_draft")
+       3 //   FAKE_MCP_LOG    file to append one JSON line per received r
+         equest (method + tool name)
+       4 //   FAKE_MCP_MODE   ok (default) | tool-error | hang | crash
+         (behaviour on tools/call)
+       5 import fs from 'node:fs';
+       6 import readline from 'node:readline';
+     … +29 lines (ctrl+o to expand)
+
+● Write(tests\unit\compose-sinks-config.test.js)
+  ⎿  Wrote 238 lines to tests\unit\compose-sinks-config.test.js
+       1 import { test, describe } from 'node:test';
+       2 import assert from 'node:assert/strict';
+       3 import fs from 'node:fs';
+       4 import path from 'node:path';
+       5 import { composeFollowup } from '../../src/email/compose.js';
+       6 import { createFileSink } from '../../src/email/sinks/file.js';
+       7 import { createStdoutSink } from '../../src/email/sinks/stdout.j
+         s';
+       8 import { createMcpSink, extractId } from '../../src/email/sinks/
+         mcp.js';
+     … +230 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The 31 tests pass, including the negative cases where a send-only server is
+  refused and send-like tool names fail before any process spawns. Next I'll
+  write the ingest integration tests and a CLI-level test helper. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(tests\integration\ingest.integration.test.js)
+  ⎿  Wrote 297 lines to tests\integration\ingest.integration.test.js
+      1 import { test, describe } from 'node:test';
+      2 import assert from 'node:assert/strict';
+      3 import fs from 'node:fs';
+      4 import path from 'node:path';
+      5 import { ingestFolder } from '../../src/services/ingest-service.j
+        s';
+      6 import { createClock } from '../../src/clock.js';
+      7 import { loadConfig } from '../../src/config.js';
+      8 import { UsageError } from '../../src/errors.js';
+      9 import { memoryRepo, makeNotesFolder, note, tempDir } from '../he
+     … +289 lines (~15 KB) (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The parser is right and my test arithmetic was off. In the note() helper the
+  first item sits on line 6 (title, date, attendees, blank, heading, item). I'll
+  fix the expectation.
+
+  Ran 1 shell command (ctrl+o to expand)
+● 27/27. Now the command-level tests (list, done, followup, with the same-name
+  and duplicate-guard cases), then acceptance scenarios A1–A10 on the real
+  corpus.
+
+● Write(tests\integration\commands.test.js)
+  ⎿  Wrote 313 lines to tests\integration\commands.test.js
+       1 import { test, describe } from 'node:test';
+       2 import assert from 'node:assert/strict';
+       3 import fs from 'node:fs';
+       4 import path from 'node:path';
+       5 import { workspace, note, ROOT } from '../helpers.js';
+       6
+       7 const FAKE = path.join(ROOT, 'tests', 'fixtures', 'fake-mcp-serv
+         er.mjs');
+       8
+       9 const FILES = {
+     … +304 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All 29 tests pass; next I'm running the acceptance scenarios A1–A10 against
+  the real 35-file corpus, since those test behavior on the messy data.
+  · summary
+
+● Write(tests\integration\acceptance.test.js)
+  ⎿  Wrote 298 lines to tests\integration\acceptance.test.js
+       1 // Spec §9 acceptance scenarios A1–A10, run against the real 35-
+         file corpus in notes/.
+       2 import { test, describe, before } from 'node:test';
+       3 import assert from 'node:assert/strict';
+       4 import fs from 'node:fs';
+       5 import path from 'node:path';
+       6 import { workspace, NOTES_DIR } from '../helpers.js';
+       7
+       8 let ws;
+       9 let report;
+     … +289 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The three failing tests are wrong, not the tool: as of 2026-10-15, those items
+  are correctly overdue, so I'm fixing the assertions. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All 29 acceptance scenarios pass. Next are the e2e tests that spawn the real
+  binary, which check exit codes, piped output with no ANSI codes, and that no
+  stray warnings appear on stderr.
+
+● Write(tests\integration\cli.e2e.test.js)
+  ⎿  Wrote 91 lines to tests\integration\cli.e2e.test.js
+       1 // Spawns the real executable (bin/actiontrack.js) — exit codes,
+          stdout/stderr contract, shim behaviour (FR-G1–G5).
+       2 import { test, describe } from 'node:test';
+       3 import assert from 'node:assert/strict';
+       4 import path from 'node:path';
+       5 import { spawnSync } from 'node:child_process';
+       6 import { BIN, NOTES_DIR, tempDir } from '../helpers.js';
+       7
+       8 function cli(args, { env = {}, cwd } = {}) {
+       9   const dir = cwd ?? tempDir('e2e-');
+     … +82 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The full suite passes with 292 tests and no failures in about 5 seconds. One
+  e2e test's name claims a corrupt-database check it doesn't perform, so I'm
+  fixing that and then checking coverage for untested code. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Coverage is 99.4% of lines and 93% of branches, with the gaps mostly in the
+  bin shim that the in-process tool can't see. I'm making the file sink report a
+  clean per-owner failure when the drafts folder isn't writable, and adding a
+  test for it. · summary
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The import was added, but the body replacement silently didn't match, so the
+  test caught an incomplete fix. I'll rewrite the file outright instead of
+  patching it.
+
+● Write(src\email\sinks\file.js)
+  ⎿  Added 10 lines, removed 6 lines
+      11      name: 'file',
+      12      async createDraft(payload, meta) {
+      13        const folder = path.join(dir, run);
+      14 -      fs.mkdirSync(folder, { recursive: true });               
+      14        const jsonPath = path.join(folder, `${meta.slug}.json`);
+      16 -      fs.writeFileSync(jsonPath, `${JSON.stringify({ to: payloa
+         -d.to, subject: payload.subject, body: payload.body }, null, 2)}
+         -\n`);                                                          
+      17 -      fs.writeFileSync(                                        
+      18 -        path.join(folder, `${meta.slug}.txt`),                 
+      19 -        `To: ${payload.to.join(', ')}\nSubject: ${payload.subje
+         -ct}\n\n${payload.body}\n`,                                     
+      20 -      );                                                       
+      15 +      try {                                                    
+      16 +        fs.mkdirSync(folder, { recursive: true });             
+      17 +        fs.writeFileSync(jsonPath, `${JSON.stringify({ to: payl
+         +oad.to, subject: payload.subject, body: payload.body }, null, 2
+         +)}\n`);                                                        
+      18 +        fs.writeFileSync(                                      
+      19 +          path.join(folder, `${meta.slug}.txt`),               
+      20 +          `To: ${payload.to.join(', ')}\nSubject: ${payload.sub
+         +ject}\n\n${payload.body}\n`,                                   
+      21 +        );                                                     
+      22 +      } catch (err) {                                          
+      23 +        throw new SinkError(`cannot write draft for ${meta.pers
+         +onName} to ${folder}: ${err.message}`);                        
+      24 +      }                                                        
+      25        return { status: 'staged', location: jsonPath };
+      26      },
+      27    };
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All 294 tests pass. I'm now updating the specs to record the three deviations
+  I made during implementation: re-processing on every run, the extra
+  occurrences.task column, and the unknown-owner exit code. · summary
+
+  Ran 1 shell command · 1 failed (ctrl+o to expand)
+
+● Bash is rejecting long heredocs again, so I'll write the patch script as a
+  file and run it.
+
+  Made 1 scratchpad edit +77, ran 1 shell command (ctrl+o to expand)
+
+● The documents match the build, so I'm moving to the live Gmail check: staging
+  a follow-up payload in the scratchpad and relaying one draft via create_draft,
+  with no recipient since the notes have no addresses. · summary
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● Now the relay to the Gmail connector. This calls create_draft only, with no
+  recipients, so it can only ever land in the user's Drafts folder.
+
+  Called Gmail · 1 failed (ctrl+o to expand)
+
+● The connector refused the call, so the earlier schema load doesn't mean the
+  session is live. I'm trying a name-based reconnect once, then retrying the
+  same single draft. · summary
+
+● Gmail no longer appears in the needs-authentication list, so the reconnect
+  worked. I'll retry the single draft.
+
+  Called Gmail · 1 failed (ctrl+o to expand)
+
+● The Gmail connector refused again, so no draft was created; I'm marking T25 as
+  blocked and finishing the remaining deliverables, with skills.md covering how
+  the relay works once it's live. · summary
+
+● Write(skills.md)
+  ⎿  Wrote 91 lines to skills.md
+      1 # skills.md — what an agent can do with actiontrack
+      2
+      3 Capabilities for Claude Code (or any agent) working with this rep
+        o. Each skill lists **when to use it**, **exact steps**, and **gu
+        ardrails**.
+      4 Read `CLAUDE.md` first; the safety rules there apply to every ski
+        ll below.
+      5
+      6 ---
+      7
+     … +84 lines (ctrl+o to expand)
+
+● Write(actiontrack.config.example.json)
+  ⎿  Wrote 17 lines to actiontrack.config.example.json
+       1 {
+       2   "people": {
+       3     "Priya Nair": { "email": "priya.nair@example.com" },
+       4     "Karan Joshi": { "email": "karan.joshi@example.com" }
+       5   },
+       6   "followup": {
+       7     "sink": "file",
+       8     "draftsDir": ".actiontrack/drafts",
+       9     "signoff": "Thanks,",
+      10     "mcp": {
+     … +7 lines (ctrl+o to expand)
+
+● Write(README.md)  ⎿  Wrote 72 lines to README.md
+      1 # actiontrack
+      2
+      3 Turn a folder of markdown meeting notes into a tracked, de-duplic
+        ated list of action items — and draft (never send) follow-up emai
+        ls.
+      4
+      5 * Zero npm dependencies · Node ≥ 22.13 · SQLite via `node:sqlite`
+         · tests via `node:test`
+      6 * Built with Spec-Driven Development: [`specs/001-actiontrack/`](
+        specs/001-actiontrack) (analysis → spec → plan → tasks)
+     … +66 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Now I'll tick the task list honestly: everything verified is checked, T25 is
+  marked blocked, and I'll note where the build deviated from the plan.
+
+  Made 1 scratchpad edit +29, ran 1 shell command (ctrl+o to expand)
+
+● As the last step, I'll run the whole suite once more and check the final tree
+  for stray artifacts such as an accidentally created .actiontrack/ in the
+  project.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● actiontrack is built, but I haven't created a Gmail draft yet. All four
+  commands work and the test suite passes (294 tests, 0 failures). When I tried
+  to create the first draft, the claude.ai Gmail connector replied "needs to be
+  connected in claude.ai" on both attempts. I can't run the sign-in from this
+  session, so please reconnect it in your claude.ai connector settings.
+
+  How I followed SDD
+
+  I wrote the specs and plan before any code:
+  1. Analysis: I wrote the 35 sample notes to notes/, then catalogued the
+     formats, the traps (a quoted "wish", a fenced example, a commented-out
+     item) and the ambiguities. It also holds 12 recorded decisions.
+  2. Spec: numbered requirements with 10 acceptance scenarios.
+  3. Plan: architecture, the SQLite schema, the algorithms and the test
+     strategy.
+  4. Tasks: an ordered list that I ticked off as I went.
+
+  When the build deviated from the plan, I updated the documents. The main
+  example: every note is now re-processed on each ingest, so same-name
+  resolution can't depend on how ingests were batched. It is also listed in
+  tasks.md.
+
+  I also wrote CLAUDE.md and skills.md, plus a README.md and an example config.
+
+  How the edge cases come out on your sample folder
+
+  - Ingest: 31 notes are ingested and 3 are skipped with reasons: scratch.md
+    (binary), untitled.md (no date) and the sometime last week note. The .txt is
+    ignored. Re-running changes nothing.
+  - Duplicates: the revised-quote item appears in 3 meetings and shows as one
+    done item.
+  - Same first name: Priya Nair/Shah and Rahul Mehta/Verma resolve from
+    attendees or initials like Priya N.. Six items stay ambiguous and are never
+    guessed. --owner Priya exits with an error naming both people, and both
+    candidates get the item under "PLEASE CONFIRM".
+  - No owner or date: Everyone, TBD and similar items are listed under list
+    --unassigned. Undated items are never overdue.
+  - Traps: the quoted refund wish, the fenced example and the commented-out
+    token purchase never become items.
+
+  Things to know
+
+  - No email addresses exist in the notes, so drafts have an empty "To" and a
+    warning. Add addresses in actiontrack.config.json; I didn't invent any.
+  - Sending is impossible by construction: the code can only create drafts. The
+    MCP sink refuses any tool whose name contains "send", and tests check this.
+  - The CLI can't call the claude.ai Gmail connector itself. The intended flow
+    is followup --json to stage the drafts, then Claude calls the connector's
+    create_draft for each (skills.md, Skill 4).
+  - I used Node and SQLite because Python isn't installed here. There are no npm
+    dependencies.
+  - Not built: an assign command to settle ambiguous owners, fuzzy duplicate
+    matching, and inferring completion from prose.
+
+  Start with README.md, or run node bin/actiontrack.js ingest notes.
+
+> <ide_opened_file>The user opened the file
+  c:\Users\Coditas-Admin\Desktop\AI\eval\CLAUDE.md in the IDE. This may or may
+  not be related to the current task.</ide_opened_file>
+
+> Check the project against the requirements, run the tests and test all CLI
+  commands and edge cases using the sample notes. Fix any issues and give me
+  simple step-by-step instructions to run and verify the project locally.
+
+● I'll audit this properly instead of just re-running the suite. That means four
+  passes:
+  - re-check each requirement in the brief,
+  - drive every command by hand on the sample notes,
+  - probe messy-input edge cases the tests don't cover,
+  - run the project from a clean copy, to catch hidden dependence on my working
+    directory.
+
+  I'll start with the baseline and timing.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The baseline passes cleanly at 294/294, matching a fresh copy, with ingest at
+  0.4 s against the 2 s target. I'm now running each command by hand against the
+  sample notes, failure paths included. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Two small polish issues so far: "1 items" has a grammar slip, and a mistyped
+  folder reports false success. I'll fix both once the follow-up commands are
+  done. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The command paths work, and the --all output repeats the "no recipient"
+  warning per person, so I'm collapsing it to one line. Next I'll test it
+  against messy real-world notes (bold names, tabs, accented names, a US date,
+  Windows-1252, CRLF). · summary
+
+  Made 1 scratchpad edit +52, ran 1 shell command (ctrl+o to expand)
+
+● Four defects turned up that the sample notes didn't trigger: numbered
+  checklists get dropped, bold or code-wrapped owners are lost, and "next
+  Monday" without a preposition isn't parsed as a date. I'll fix each of these
+  test-first, starting with the failing tests. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The five new tests fail for exactly the reasons I found, so the tests
+  reproduce the bugs. Now the fixes.
+
+● Update(src\domain\action-lines.js)
+  ⎿  Added 2 lines, removed 1 line
+       9   * @typedef {{lineNo: number, kind: 'checkbox'|'action'|'table'
+          , checked: boolean, text: string, raw: string}} ActionLine
+      10   */
+      11 
+      12 -const CHECKBOX = /^\s*[-*+]\s+\[([ xX])\]\s*(.*)$/;            
+      12 +// Bullets (-, *, +) and numbered checklists ("1. [ ]", "2) [x]
+         +") are all action items.                                       
+      13 +const CHECKBOX = /^\s*(?:[-*+]|\d{1,3}[.)])\s+\[([ xX])\]\s*(.*
+         +)$/;                                                           
+      14  const ACTION = /^\s*(?:[-*+]\s+)?action\s*:\s*(.+)$/i;
+      15  const SEPARATOR = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|
+          ?\s*$/;
+      16  const EMPTY_CELL = /^(?:|-|—|–|n\/a|tbd|none)$/i;
+
+● Update(src\domain\owner.js)
+  ⎿  Added 4 lines, removed 3 lines
+      57   * `viaColon` is true for "Name: task" form; callers should onl
+          y trust it when the name resolves to a known person.
+      58   * @returns {{owners: OwnerToken[], helpers: string|null, task:
+           string, viaColon: boolean}}
+      59   */
+      60 -export function parseOwnerClause(text) {                       
+      61 -  const m = CLAUSE.exec(text.trim());                          
+      62 -  if (!m) return { owners: [], helpers: null, task: text.trim()
+         -, viaColon: false };                                           
+      60 +export function parseOwnerClause(rawText) {                    
+      61 +  const text = stripLeadingEmphasis(rawText);                  
+      62 +  const m = CLAUSE.exec(text);                                 
+      63 +  if (!m) return { owners: [], helpers: null, task: text, viaCo
+         +lon: false };                                                  
+      64    const parts = m.groups.owners.split(/\s*(?:&|,|\band\b)\s*/).
+          filter(Boolean);
+      65    const owners = parts.map(classify);
+      66    if (owners.some((o) => o === null)) return { owners: [], help
+          ers: null, task: text.trim(), viaColon: false };
+
+● Update(src\domain\owner.js)
+  ⎿  Added 1 line, removed 1 line
+      63    if (!m) return { owners: [], helpers: null, task: text, viaCo
+          lon: false };
+      64    const parts = m.groups.owners.split(/\s*(?:&|,|\band\b)\s*/).
+          filter(Boolean);
+      65    const owners = parts.map(classify);
+      66 -  if (owners.some((o) => o === null)) return { owners: [], help
+         -ers: null, task: text.trim(), viaColon: false };               
+      66 +  if (owners.some((o) => o === null)) return { owners: [], help
+         +ers: null, task: text, viaColon: false };                      
+      67    return {
+      68      owners: /** @type {OwnerToken[]} */ (owners),
+      69      helpers: m.groups.helpers?.trim() ?? null,
+
+● Update(src\domain\owner.js)
+  ⎿  Added 15 lines
+      50    return { kind: 'name', label, first, qualifier };
+      51  }
+      52 
+      53 +const WRAP = '(\\*\\*|__|\\*|_|`)';                            
+      54 +                                                               
+      55  /**
+      56 + * Notes often bold or code-format the owner ("**Sam** to …", "
+         +`Sam` to …", "**Sam:** …") or the whole line.                  
+      57 + * Remove that wrapper — only at the START of the text, so emph
+         +asis inside the task is never touched.                         
+      58 + * @param {string} input                                       
+      59 + */                                                            
+      60 +export function stripLeadingEmphasis(input) {                  
+      61 +  let s = input.trim();                                        
+      62 +  s = s.replace(new RegExp(`^${WRAP}([^*_\`]+)\\1$`), '$2');   
+         +              // whole text wrapped                            
+      63 +  s = s.replace(/^(\*\*|__)([^*_]+?:)\1/, '$2');               
+         +             // **Sam:** task                                  
+      64 +  s = s.replace(new RegExp(`^${WRAP}([^*_\`]+?)\\1(?=[\\s:])`),
+         + '$2');        // **Sam** to …                                 
+      65 +  return s.trim();                                             
+      66 +}                                                              
+      67 +                                                               
+      68 +/**                                                            
+      69   * Split "<owners> to <task>" off the front of an item's text.
+      70   * Returns an empty `owners` list (and the text untouched) when
+           no owner is recognisable.
+      71   * @param {string} text
+
+● Update(src\domain\note-parser.js)
+  ⎿  Added 1 line, removed 1 line
+      117        raw: al.raw,
+      118        owners: clause.owners,
+      119        viaColon: clause.viaColon,
+      120 -      fullText: al.text,                                      
+      120 +      fullText: stripLeadingEmphasis(al.text),                
+      121        task: taskText,
+      122        due: dueRes.due,
+      123        duePhrase: dueRes.phrase,
+
+● Update(src\domain\note-parser.js)
+  ⎿  Added 1 line, removed 1 line
+      3  import { parseFrontMatter, splitList } from './frontmatter.js';
+      4  import { scanLines } from './markdown-scan.js';
+      5  import { extractActionLines } from './action-lines.js';
+      6 -import { parseOwnerClause } from './owner.js';                  
+      6 +import { parseOwnerClause, stripLeadingEmphasis } from './owner.
+        +js';                                                            
+      7  import { extractDue, isValidIso, parseAbsoluteDate, weekday } fr
+         om './dates.js';
+      8  import { buildRoster } from './roster.js';
+      9 
+
+● Update(src\domain\note-parser.js)
+  ⎿  Added 1 line, removed 1 line
+      76    if (!dateRaw) return fail('missing-date', 'no "Date:" found i
+          n the note header', hint ? `filename suggests ${hint}` : undefi
+          ned);
+      77    const parsed = parseAbsoluteDate(dateRaw);
+      78    if ('error' in parsed) {
+      79 -    return fail('invalid-date', `Date: "${dateRaw}" is ${parsed
+         -.error === 'invalid' ? 'not a real calendar date' : 'not a reco
+         -gnisable date'}`,                                              
+      79 +    return fail('invalid-date', `Date: "${dateRaw}" is ${parsed
+         +.error === 'invalid' ? 'not a real calendar date' : 'not a reco
+         +gnisable date (use YYYY-MM-DD, "9 September 2026" or "September
+         + 9, 2026")'}`,                                                 
+      80        hint ? `filename suggests ${hint}` : undefined);
+      81    }
+      82    const date = parsed.iso;
+
+● Update(src\domain\dates.js)
+  ⎿  Added 3 lines, removed 1 line
+      207      form.re.lastIndex = 0;
+      208      for (const m of text.matchAll(form.re)) {
+      209        const hasPrep = Boolean(m.groups.prep);
+      210 -      if (!hasPrep && !form.bare) continue;                   
+      210 +      // "next Monday" is unmistakably a date even without "by
+          +"/"on"; a bare "Monday" is not (could be "the Monday report").
+      211 +      const explicitNext = form.kind === 'weekday' && Boolean(
+          +m.groups.next);                                               
+      212 +      if (!hasPrep && !form.bare && !explicitNext) continue;  
+      213        const start = m.index;
+      214        const end = m.index + m[0].length;
+      215        if (!best || end > best.end || (end === best.end && star
+           t < best.start)) {
+
+● Now the three UX fixes: pluralisation, the empty-folder hint, and one
+  collapsed "no recipient" line.
+
+● Update(src\commands\list.js)
+  ⎿  Added 1 line, removed 1 line
+      111        { header: 'SOURCE', key: 'source' },
+      112      ], rows));
+      113      const count = (s) => rows.filter((r) => r._status === s).l
+           ength;
+      114 -    ctx.io.out(`\n${rows.length} items (${count('overdue')} ov
+          -erdue, ${count('open')} open, ${count('done')} done) as of ${t
+          -oday}`);                                                      
+      114 +    ctx.io.out(`\n${rows.length} ${rows.length === 1 ? 'item' 
+          +: 'items'} (${count('overdue')} overdue, ${count('open')} open
+          +, ${count('done')} done) as of ${today}`);                    
+      115      return 0;
+      116    },
+      117  };
+
+● Update(src\format\report.js)  ⎿  Added 4 lines
+      15    out.push(`  Lines:  ${r.lines} action lines → ${r.occurrences
+          } item mentions`);
+      16    out.push(`  Items:  ${r.items.created} new · ${r.items.update
+          d} updated · ${r.items.unchanged} unchanged · ${r.items.removed
+          } removed`);
+      17 
+      18 +  if (r.scanned === 0) {                                       
+      19 +    out.push('', paint('yellow', 'No .md files were found in th
+         +at folder — check the path (sub-folders are searched; dot-folde
+         +rs and node_modules are skipped).', color));                   
+      20 +  }                                                            
+      21 +                                                               
+      22    const skipped = r.files.filter((f) => f.status === 'skipped')
+          ;
+      23    if (skipped.length) {
+      24      out.push('', paint('yellow', `Skipped (${skipped.length}) —
+           not ingested, nothing changed:`, color));
+
+● Update(src\commands\followup.js)
+  ⎿  Added 9 lines, removed 1 line
+      53        } else if (d.status !== 'previewed') {
+      54          ctx.io.out(`  ${paint('green', '✓', c)} ${d.person} <${
+          to}> — ${summary} → ${d.status}${d.location ? ` ${d.location}`
+          : ''}${d.id ? ` (draft ${d.id})` : ''}`);
+      55        }
+      56 -      for (const w of d.warnings) ctx.io.out(`      ! ${w.code}
+         -: ${w.message}`);                                              
+      56 +      // "no recipient" is reported once for everyone below, no
+         +t once per draft; skipped duplicates need no warning.          
+      57 +      if (d.status !== 'skipped-duplicate') {                  
+      58 +        for (const w of d.warnings) if (w.code !== 'missing-rec
+         +ipient') ctx.io.out(`      ! ${w.code}: ${w.message}`);        
+      59 +      }                                                        
+      60      }
+      61 +    const noRecipient = result.drafts.filter((d) => d.status !=
+         += 'skipped-duplicate' && d.status !== 'failed' && d.warnings.so
+         +me((w) => w.code === 'missing-recipient'));                    
+      62 +    if (noRecipient.length) {                                  
+      63 +      ctx.io.out(`  ! No email address configured for: ${noReci
+         +pient.map((d) => d.person).join(', ')}`,                       
+      64 +        '    Add them under "people" in actiontrack.config.json
+         + (see actiontrack.config.example.json) before sending.');      
+      65 +    }                                                          
+      66      if (result.drafts.length === 0) ctx.io.out('No follow-ups n
+          eeded: no open or overdue items.');
+      67      if (values.all && result.nothingToSend.length) ctx.io.out(`
+            (nothing to follow up for: ${result.nothingToSend.join(', ')}
+          )`);
+      68 
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● All 301 pass, including the five regression tests, and the acceptance counts
+  on the sample corpus are unchanged. I'll lock in the UX fixes and the whole
+  messy-notes scenario as permanent tests.
+
+  Ran 3 shell commands (ctrl+o to expand)
+
+● The failing test exposed a real bug: owners with accented letters, like José,
+  were silently dropped because the name pattern only matched A–Z. I'm switching
+  the pattern to be Unicode-aware next. · summary
+
+● Update(src\domain\owner.js)
+  ⎿  Added 2 lines, removed 1 line
+      15    'sync', 'reach', 'back', 'go', 'get', 'make', 'test', 'plan',
+           'clean', 'collect', 'agree', 'decide',
+      16  ]);
+      17 
+      18 -const NAMEQ = String.raw`@?[A-Za-z][A-Za-z'’-]*(?:\s+(?:[A-Z]\.
+         -?|[A-Z][a-z]+))?`;                                             
+      18 +// Unicode-aware (\p{L}) so "José", "Zoë", "Søren", "Zoë Ng" ar
+         +e names too. Compiled with the `u` flag below.                 
+      19 +const NAMEQ = String.raw`@?\p{L}[\p{L}'’-]*(?:\s+(?:\p{Lu}\.?|\
+         +p{Lu}\p{Ll}+))?`;                                              
+      20  const CLAUSE = new RegExp(
+      21    String.raw`^(?<owners>${NAMEQ}(?:\s*(?:&|,|\band\b)\s*${NAMEQ
+          })*)` +
+      22    String.raw`(?:\s*\((?:with|and|cc)\s+(?<helpers>[^)]+)\))?` +
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(src\domain\owner.js)
+  ⎿  Added 1 line
+      21    String.raw`^(?<owners>${NAMEQ}(?:\s*(?:&|,|\band\b)\s*${NAMEQ
+          })*)` +
+      22    String.raw`(?:\s*\((?:with|and|cc)\s+(?<helpers>[^)]+)\))?` +
+      23    String.raw`(?<delim>\s*:\s*|\s+(?:[Tt]o|will|should)\s+)(?<ta
+          sk>.+)$`,
+      24 +  'u',                                                         
+      25  );
+      26 
+      27  /**
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 308/308. As a final end-to-end check I'll run the exact steps I plan to give
+  you, in PowerShell (your shell), from a clean state, and confirm each expected
+  output and exit code.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Every step now runs cleanly in PowerShell with the expected output, and the
+  demo database holds real data. Next I'll tidy the demo state and update the
+  spec and test counts for the new behaviour. · summary
+
+  Made 1 scratchpad edit +38, ran 1 shell command (ctrl+o to expand)
+
+● The project meets the brief, and I fixed the defects I found along the way.
+  All 308 tests pass, including from a clean copy of the project in a different
+  folder, and line coverage is about 99%. I haven't created a live Gmail draft
+  yet: the claude.ai Gmail connector still reports "needs to be connected".
+
+  What I checked
+
+  - The brief: all four commands (ingest, list, done, followup) work, with the
+    specified filters. They also handle duplicates, missing owners or dates,
+    same-first-name people and malformed notes.
+  - The sample notes: ingest gives 31 notes ingested, 3 skipped with reasons,
+    115 action lines and 93 items. A second ingest changes nothing. It takes
+    about 0.4 s.
+  - Edge cases by hand: I also fed it a folder of deliberately messy notes. Bad
+    inputs fail cleanly, with exit 2 for usage errors (such as the ambiguous
+    --owner Priya) and exit 1 for runtime errors (such as an unknown id).
+
+  Bugs I found and fixed
+
+  Each fix has a regression test.
+  - Numbered checklists were silently dropped. Items written as 1. [ ] … or 2)
+    [x] … never became items.
+  - Bold or code-wrapped owners lost their owner. **Sam** to… became an
+    owner-less item.
+  - Accented names never parsed. José to review… had no owner, because the name
+    pattern only allowed A–Z.
+  - next Monday on its own wasn't read as a date.
+  - Smaller UX fixes:
+    - an empty or mistyped folder now says "No .md files found" instead of
+      looking like success;
+    - "1 items" is now "1 item";
+    - the date error now lists the accepted formats;
+    - followup --all reports missing email addresses once, not once per person.
+
+  Run it yourself
+
+  You're on Windows with PowerShell, and Node v24 is installed. The --today
+  2026-10-15 flag makes the sample notes (dated Sep–Oct 2026) give the same
+  output every time.
+
+  1. Open the project and run the tests. Expect pass 308, fail 0.
+  cd C:\Users\Coditas-Admin\Desktop\AI\eval
+  npm test
+
+  2. Ingest the sample notes. Expect "31 ingested · 3 skipped", then the three
+  skipped files with reasons, then a list of items needing attention (six
+  ambiguous owners, five with no owner).
+  node bin/actiontrack.js ingest notes --today 2026-10-15
+
+  3. List items. The first command shows Karan's 7 overdue items. The second
+  shows items nobody owns. The third shows only open work due before Friday.
+  node bin/actiontrack.js list --owner "Karan Joshi" --status overdue --today
+  2026-10-15
+  node bin/actiontrack.js list --unassigned --today 2026-10-15
+  node bin/actiontrack.js list --due-before friday --status open --today
+  2026-10-15
+
+  4. Try the same-name edge case. This should print an error naming Priya Nair
+  and Priya Shah. $LASTEXITCODE should be 2.
+  node bin/actiontrack.js list --owner Priya --today 2026-10-15
+  $LASTEXITCODE
+
+  5. Mark an item done. Run the first command twice. The second run says
+  "already done". Item 9999 doesn't exist, so it fails with exit 1.
+  node bin/actiontrack.js done 6 --today 2026-10-15
+  node bin/actiontrack.js done 9999 --today 2026-10-15
+
+  6. Re-ingest. Expect "0 new · 0 updated · 93 unchanged", and item 6 should
+  still be done.
+  node bin/actiontrack.js ingest notes --today 2026-10-15
+  node bin/actiontrack.js list --status done --today 2026-10-15
+
+  7. Preview a follow-up email. This prints the email text and saves nothing.
+  Priya Nair's has a "PLEASE CONFIRM" section for items that could be hers or
+  Priya Shah's.
+  node bin/actiontrack.js followup "Priya Nair" --dry-run --today 2026-10-15
+
+  8. Stage drafts for everyone. This writes draft files under
+  .actiontrack\drafts\. Running it again skips drafts that already exist.
+  Nothing is ever sent.
+  node bin/actiontrack.js followup --all --today 2026-10-15
+  Get-ChildItem .actiontrack\drafts -Recurse -Filter *.json
+
+  9. Reset when you're done.
+  Remove-Item .actiontrack -Recurse -Force
+
+  To get real Gmail drafts: reconnect Gmail in your claude.ai connector
+  settings, then ask me to relay the staged drafts. I'll call only create_draft,
+  never send. The notes contain no email addresses, so drafts have an empty
+  "To" until you add addresses under people in actiontrack.config.json.
+  actiontrack.config.example.json shows the format.
+
+  I've updated spec.md, analysis.md, tasks.md and README.md to match.
+
+> <browser_instruction>[Browser disconnected: The browser connection has been
+  closed. Browser tools are no longer available.]</browser_instruction>
+
+> <ide_opened_file>The user opened the file
+  c:\Users\Coditas-Admin\Desktop\AI\eval\.gitignore in the IDE. This may or may
+  not be related to the current task.</ide_opened_file>
+
+> error: "Priya" matches more than one person: Priya Nair, Priya Shah. Use the
+  full name (or "First I." initial).
+  2                                          node bin/actiontrack.js list
+  --owner Priya --today 2026-10-15
+  >> $LASTEXITCODE^Cs-Admin\Desktop\AI\eval> node bin/actiontrack.js list
+  --owner Priya --today 2026-10-15
+  >> $LASTEXITCODE^Cs-Admin\Desktop\AI\eval> node bin/actiontrack.js list
+  --owner Priya Nair --today 2026-10-15
+  >> $LASTEXITCODEtas-Admin\Desktop\AI\eval>
+  error: unexpected argument "Nair" (usage: actiontrack list [--owner <name>]
+  [--status open|done|overdue] [--due-before <date>] [--unassigned] [--json])
+  2
+  PS C:\Users\Coditas-Admin\Desktop\AI\eval>
+
+● Your paste shows the cause. --owner Priya Nair without quotes failed, because
+  the shell splits it into Priya and Nair and the CLI rejected the second word.
+  Your first command worked, and the exit code 2 was correct. Typing a two-word
+  name without quotes is natural, though, so I'll make the CLI accept it. For
+  followup, the owner is the only positional, so all the words can be joined.
+  For list, the extra words attach to --owner.
+
+● Update(src\commands\list.js)
+  ⎿  Added 8 lines, removed 1 line
+      48      unassigned: { type: 'boolean' },
+      49    },
+      50    run({ args, values, ctx }) {
+      51 -    if (args.length) throw new UsageError(`unexpected argument 
+         -"${args[0]}" (usage: actiontrack ${listCommand.usage})`);      
+      51 +    // `--owner Priya Nair` (no quotes) reaches us as owner="Pr
+         +iya" + a stray "Nair": treat the strays as the rest of the name
+         +.                                                              
+      52 +    let ownerQuery = values.owner;                             
+      53 +    if (args.length) {                                         
+      54 +      if (ownerQuery === undefined) {                          
+      55 +        throw new UsageError(`unexpected argument "${args[0]}".
+         + If it is part of a name, use --owner "${args.join(' ')}" (usag
+         +e: actiontrack ${listCommand.usage})`);                        
+      56 +      }                                                        
+      57 +      ownerQuery = [ownerQuery, ...args].join(' ');            
+      58 +    }                                                          
+      59      const today = ctx.clock.today();
+      60 
+      61      /** @type {('open'|'done'|'overdue')[]|undefined} */
+
+● Update(src\commands\list.js)
+  ⎿  Added 3 lines, removed 3 lines
+      72      }
+      73 
+      74      let ownerIds;
+      75 -    if (values.owner !== undefined) {                          
+      76 -      const person = findOwner(ctx.repo, values.owner, { missin
+         -g: 'null' });                                                  
+      75 +    if (ownerQuery !== undefined) {                            
+      76 +      const person = findOwner(ctx.repo, ownerQuery, { missing:
+         + 'null' });                                                    
+      77        if (!person) {
+      78          const known = ctx.repo.allPeople().map((p) => p.fullNam
+          e).join(', ') || 'none ingested yet';
+      79 -        ctx.io.err(`no person matches "${values.owner}" (known:
+         - ${known})`);                                                  
+      79 +        ctx.io.err(`no person matches "${ownerQuery}" (known: $
+         +{known})`);                                                    
+      80          ownerIds = [];
+      81        } else {
+      82          ownerIds = [person.id];
+
+● Update(src\commands\followup.js)
+  ⎿  Added 2 lines, removed 1 line
+      16      force: { type: 'boolean' },
+      17    },
+      18    async run({ args, values, ctx }) {
+      19 -    if (values.all ? args.length > 0 : args.length !== 1) {    
+      19 +    if (values.all ? args.length > 0 : args.length === 0) {    
+      20        throw new UsageError('usage: actiontrack followup <owner>
+             or   actiontrack followup --all');
+      21      }
+      22 +    const owner = args.join(' '); // quotes are optional: `foll
+         +owup Priya Nair` == `followup "Priya Nair"`                    
+      23      if (values.sink !== undefined && !SINK_NAMES.includes(value
+          s.sink)) {
+      24        throw new UsageError(`--sink must be one of ${SINK_NAMES.
+          join(', ')} (got "${values.sink}")`);
+      25      }
+
+● Update(src\commands\followup.js)
+  ⎿  Added 1 line, removed 1 line
+      28 
+      29      let result;
+      30      try {
+      31 -      result = await runFollowup(ctx, { owner: args[0], all: va
+         -lues.all, sink, force: values.force });                        
+      31 +      result = await runFollowup(ctx, { owner, all: values.all,
+         + sink, force: values.force });                                 
+      32      } finally {
+      33        await sink.close?.();
+      34      }
+
+● Now tests that reproduce your exact command, plus the spec note, followed by a
+  run in PowerShell.
+
+  Ran 2 shell commands · 1 failed (ctrl+o to expand)
+
+● list --owner Priya Nair now works without quotes, and followup Karan Joshi
+  does too. All 313 tests pass, and I re-ran your exact command in PowerShell.
+
+  Your paste showed two things:
+  - Your first command worked as designed. list --owner Priya printed the
+    "matches more than one person" error and exit code 2, which is the "never
+    guess which Priya" rule.
+  - Your second command was a real usability gap. list --owner Priya Nair
+    without quotes failed with unexpected argument "Nair". PowerShell splits the
+    name into two words and the CLI only accepted the first. Typing a name
+    without quotes is natural, so I fixed the CLI rather than blaming the
+    quoting.
+
+  What changed
+
+  - list --owner Priya Nair is now treated as --owner "Priya Nair". This also
+    works with the initial form (--owner Priya N.) and with flags after it.
+  - followup Karan Joshi works the same as followup "Karan Joshi".
+  - A first name shared by two people (--owner Priya) is still refused with exit
+    2.
+  - A stray word with no --owner (for example list Nair) is still an error, but
+    the message now suggests --owner "Nair".
+  - I added 5 tests for this, including your exact command, and noted it in
+    spec.md (FR-L4).
+
+  I also removed the demo .actiontrack/ folder again, so the project is clean.
+
+  Quoted names still work, so the steps I gave you earlier are valid as written.
+  If you'd like, I can also make $LASTEXITCODE unnecessary in those steps by
+  having each step print its own "exit code" line.

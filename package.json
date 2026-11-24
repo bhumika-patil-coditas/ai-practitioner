@@ -1,0 +1,15 @@
+{
+  "name": "actiontrack",
+  "version": "1.0.0",
+  "description": "Track action items from markdown meeting notes and draft follow-up emails for review.",
+  "type": "module",
+  "bin": { "actiontrack": "bin/actiontrack.js" },
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.js\"",
+    "coverage": "node --test --experimental-test-coverage \"tests/**/*.test.js\"",
+    "start": "node bin/actiontrack.js"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

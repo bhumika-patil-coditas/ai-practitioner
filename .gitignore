@@ -1,0 +1,3 @@
+.actiontrack/
+node_modules/
+*.log
