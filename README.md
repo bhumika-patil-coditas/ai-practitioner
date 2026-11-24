@@ -15,7 +15,7 @@ node bin/actiontrack.js list --owner "Rahul Verma"
 node bin/actiontrack.js done 12                          # mark item #12 done
 node bin/actiontrack.js followup "Karan Joshi" --dry-run # preview a follow-up email
 node bin/actiontrack.js followup --all                   # stage one draft per owner
-npm test                                                 # 308 tests
+npm test                                                 # 313 tests
 ```
 State lives in `./.actiontrack/actiontrack.db` (override with `--db` / `ACTIONTRACK_DB`). Add `--today 2026-10-15` to pin "today" (the sample notes are dated Sep–Oct 2026).
 Optional config: copy `actiontrack.config.example.json` → `actiontrack.config.json` (owner emails, follow-up sink).
